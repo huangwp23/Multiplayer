@@ -8,6 +8,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Multiplayer.h"
+#include <DrawDebugHelpers.h>
 
 //////////////////////////////////////////////////////////////////////////
 // AMultiplayerCharacter
@@ -76,6 +78,22 @@ void AMultiplayerCharacter::SetupPlayerInputComponent(class UInputComponent* Pla
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AMultiplayerCharacter::OnResetVR);
 }
 
+
+void AMultiplayerCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	DrawDebugInfo();
+}
+
+void AMultiplayerCharacter::DrawDebugInfo()
+{
+	const FString LocalRoleString = ROLE_TO_STRING(GetLocalRole());
+	const FString RemoteRoleString = ROLE_TO_STRING(GetRemoteRole());
+	const FString OwnerString = GetOwner() != nullptr ? GetOwner()->GetName() : TEXT("No Owner");
+	const FString ConnectionString = GetNetConnection() != nullptr ? TEXT("Valid Connection") : TEXT("Invalid Connection");
+	const FString Values = FString::Printf(TEXT("LocalRole =   %s\nRemoteRole = %s\nOwner = %s\nConnection = %s"), *LocalRoleString, *RemoteRoleString, *OwnerString, *ConnectionString);
+	DrawDebugString(GetWorld(), GetActorLocation(), Values, nullptr, FColor::White, 0.0f, true);
+}
 
 void AMultiplayerCharacter::OnResetVR()
 {
