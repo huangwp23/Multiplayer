@@ -11,6 +11,7 @@
 #include "Multiplayer.h"
 #include <DrawDebugHelpers.h>
 #include <Net/UnrealNetwork.h>
+#include <Kismet/GameplayStatics.h>
 
 //////////////////////////////////////////////////////////////////////////
 // AMultiplayerCharacter
@@ -77,6 +78,8 @@ void AMultiplayerCharacter::SetupPlayerInputComponent(class UInputComponent* Pla
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AMultiplayerCharacter::OnResetVR);
+
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AMultiplayerCharacter::OnPressedFire);
 }
 
 
@@ -104,14 +107,54 @@ void AMultiplayerCharacter::DrawDebugInfo()
 							*LocalRoleString, *RemoteRoleString, *OwnerString, *ConnectionString, *HealthString);
 	DrawDebugString(GetWorld(), GetActorLocation(), Values, nullptr, FColor::White, 0.0f, true);*/
 
-	const FString Values = FString::Printf(TEXT("A = %.2f	B = %d"), A, B);
-	DrawDebugString(GetWorld(), GetActorLocation(), Values, nullptr, FColor::White, 0.0f, true);
+	//const FString Values = FString::Printf(TEXT("A = %.2f	B = %d"), A, B);
+	const FString AmmoString = FString::Printf(TEXT("Ammo = %d"), Ammo);
+	DrawDebugString(GetWorld(), GetActorLocation(), AmmoString, nullptr, FColor::White, 0.0f, true);
 }
 
 void AMultiplayerCharacter::OnRepNotify_B()
 {
 	const FString String = FString::Printf(TEXT("B was changed by the server and is not %d"), B);
 	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Red, String);
+}
+
+void AMultiplayerCharacter::OnPressedFire()
+{
+	ServerFire();
+}
+
+void AMultiplayerCharacter::ServerFire_Implementation()
+{
+	if (GetWorldTimerManager().IsTimerActive(FireTimer))
+	{
+		return;
+	}
+	if (Ammo == 0)
+	{
+		ClientPlaySound2D(NoAmmoSound);
+		return;
+	}
+	Ammo--;
+	GetWorldTimerManager().SetTimer(FireTimer, 1.5f, false);
+	MulticastFire();
+}
+
+bool AMultiplayerCharacter::ServerFire_Validate()
+{
+	return true;
+}
+
+void AMultiplayerCharacter::MulticastFire_Implementation()
+{
+	if (FireAnimMontage != nullptr)
+	{
+		PlayAnimMontage(FireAnimMontage);
+	}
+}
+
+void AMultiplayerCharacter::ClientPlaySound2D_Implementation(USoundBase* Sound)
+{
+	UGameplayStatics::PlaySound2D(GetWorld(), Sound);
 }
 
 void AMultiplayerCharacter::ModifyHealth(float delta)
@@ -189,4 +232,6 @@ void AMultiplayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	//DOREPLIFETIME_CONDITION(AMultiplayerCharacter, Health, COND_SimulatedOnly);
 	DOREPLIFETIME(AMultiplayerCharacter, A);
 	DOREPLIFETIME_CONDITION(AMultiplayerCharacter, B, COND_OwnerOnly);
+
+	DOREPLIFETIME(AMultiplayerCharacter, Ammo);
 }

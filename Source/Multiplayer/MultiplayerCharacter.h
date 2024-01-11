@@ -80,6 +80,29 @@ protected:
 	UFUNCTION()
 	void OnRepNotify_B();
 
+
+	FTimerHandle FireTimer;
+
+	UPROPERTY(Replicated)
+	int32 Ammo = 5;
+
+	UPROPERTY(EditDefaultsOnly, Category = "RPC Character")
+	UAnimMontage* FireAnimMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "RPC Character")
+	USoundBase* NoAmmoSound;
+
+	void OnPressedFire();
+
+	UFUNCTION(Server, Reliable, WithValidation, Category = "RPC Character")
+	void ServerFire();
+
+	UFUNCTION(NetMulticast, Unreliable, Category = "RPC Character")
+	void MulticastFire();
+
+	UFUNCTION(Client, Unreliable, Category = "RPC Character")
+	void ClientPlaySound2D(USoundBase* Sound);
+
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
