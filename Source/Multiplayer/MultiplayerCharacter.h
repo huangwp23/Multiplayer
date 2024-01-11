@@ -66,10 +66,26 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 	void DrawDebugInfo();
 
+	//UPROPERTY(Replicated)
+	float Health = 100.0f;
+
+	/*UFUNCTION();
+	void OnRep_Health();*/
+
+	UPROPERTY(Replicated)
+	float A = 100.0f;
+	UPROPERTY(ReplicatedUsing = OnRepNotify_B)
+	int32 B;
+
+	UFUNCTION()
+	void OnRepNotify_B();
+
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	void ModifyHealth(float delta);
 };
 

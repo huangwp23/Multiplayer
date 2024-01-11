@@ -51,6 +51,10 @@ void AOwnershipActor::UpdateOwnership()
 		if (GetOwner() != NextOwner)
 		{
 			SetOwner(NextOwner);
+			if (AMultiplayerCharacter* character = Cast<AMultiplayerCharacter>(NextOwner))
+			{
+				character->ModifyHealth(-10.0f);
+			}
 		}
 	}
 }

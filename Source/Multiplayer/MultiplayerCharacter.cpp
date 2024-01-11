@@ -10,6 +10,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Multiplayer.h"
 #include <DrawDebugHelpers.h>
+#include <Net/UnrealNetwork.h>
 
 //////////////////////////////////////////////////////////////////////////
 // AMultiplayerCharacter
@@ -82,17 +83,40 @@ void AMultiplayerCharacter::SetupPlayerInputComponent(class UInputComponent* Pla
 void AMultiplayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (HasAuthority())
+	{
+		A++;
+		B++;
+	}
+
 	DrawDebugInfo();
 }
 
 void AMultiplayerCharacter::DrawDebugInfo()
 {
-	const FString LocalRoleString = ROLE_TO_STRING(GetLocalRole());
+	/*const FString LocalRoleString = ROLE_TO_STRING(GetLocalRole());
 	const FString RemoteRoleString = ROLE_TO_STRING(GetRemoteRole());
 	const FString OwnerString = GetOwner() != nullptr ? GetOwner()->GetName() : TEXT("No Owner");
 	const FString ConnectionString = GetNetConnection() != nullptr ? TEXT("Valid Connection") : TEXT("Invalid Connection");
-	const FString Values = FString::Printf(TEXT("LocalRole =   %s\nRemoteRole = %s\nOwner = %s\nConnection = %s"), *LocalRoleString, *RemoteRoleString, *OwnerString, *ConnectionString);
+	const FString HealthString = FString::Printf(TEXT("Health = %f"), Health);
+	const FString Values = FString::Printf(TEXT("LocalRole =   %s\nRemoteRole = %s\nOwner = %s\nConnection = %s\n%s"), 
+							*LocalRoleString, *RemoteRoleString, *OwnerString, *ConnectionString, *HealthString);
+	DrawDebugString(GetWorld(), GetActorLocation(), Values, nullptr, FColor::White, 0.0f, true);*/
+
+	const FString Values = FString::Printf(TEXT("A = %.2f	B = %d"), A, B);
 	DrawDebugString(GetWorld(), GetActorLocation(), Values, nullptr, FColor::White, 0.0f, true);
+}
+
+void AMultiplayerCharacter::OnRepNotify_B()
+{
+	const FString String = FString::Printf(TEXT("B was changed by the server and is not %d"), B);
+	GEngine->AddOnScreenDebugMessage(-1, 0.0f, FColor::Red, String);
+}
+
+void AMultiplayerCharacter::ModifyHealth(float delta)
+{
+	Health += delta;
 }
 
 void AMultiplayerCharacter::OnResetVR()
@@ -155,4 +179,14 @@ void AMultiplayerCharacter::MoveRight(float Value)
 		// add movement in that direction
 		AddMovementInput(Direction, Value);
 	}
+}
+
+
+void AMultiplayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	//DOREPLIFETIME(AMultiplayerCharacter, Health);
+	//DOREPLIFETIME_CONDITION(AMultiplayerCharacter, Health, COND_SimulatedOnly);
+	DOREPLIFETIME(AMultiplayerCharacter, A);
+	DOREPLIFETIME_CONDITION(AMultiplayerCharacter, B, COND_OwnerOnly);
 }
